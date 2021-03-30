@@ -1,0 +1,62 @@
+[
+  {
+    "contractName": "Migrations",
+    "address": "0x28a5dA04a94F0501A6F77dF8f8A9529d27b92744"
+  },
+  {
+    "contractName": "Finder",
+    "address": "0x40f941E48A552bF496B154Af6bf55725f18D77c3"
+  },
+  {
+    "contractName": "VotingToken",
+    "address": "0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828"
+  },
+  {
+    "contractName": "IdentifierWhitelist",
+    "address": "0xcF649d9Da4D1362C4DAEa67573430Bd6f945e570"
+  },
+  {
+    "contractName": "Voting",
+    "address": "0x9921810C710E7c3f7A7C6831e30929f19537a545"
+  },
+  {
+    "contractName": "Registry",
+    "address": "0x3e532e6222afe9Bcf02DCB87216802c75D5113aE"
+  },
+  {
+    "contractName": "FinancialContractsAdmin",
+    "address": "0x4E6CCB1dA3C7844887F9A5aF4e8450d9fd90317A"
+  },
+  {
+    "contractName": "Store",
+    "address": "0x54f44eA3D2e7aA0ac089c4d8F7C93C27844057BF"
+  },
+  {
+    "contractName": "Governor",
+    "address": "0x592349F7DeDB2b75f9d4F194d4b7C16D82E507Dc"
+  },
+  {
+    "contractName": "DesignatedVotingFactory",
+    "address": "0xE81EeE5Da165fA6863bBc82dF66E62d18625d592"
+  },
+  {
+    "contractName": "WETH9",
+    "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  },
+  {
+    "contractName": "ExpiringMultiPartyLib",
+    "address": "0x09AFD24Acc170c16f4fF64BDf2A4818C515440e8"
+  },
+  {
+    "contractName": "TokenFactory",
+    "address": "0x7c96d6235CfaaCcAc5d80fCe74E6032B25dd1F03"
+  },
+  {
+    "contractName": "AddressWhitelist",
+    "address": "0x48e687205D3962c43891b8Cde5A4Fe75FA6C8D7a"
+  },
+  {
+    "contractName": "ExpiringMultiPartyCreator",
+    "address": "0xdebB91Ab3e473025bb8ce278c02361A3C4f13124"
+  }
+]
