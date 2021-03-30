@@ -1,0 +1,6 @@
+{
+  "packages": ["voter-dapp", "disputer", "liquidator", "monitors", "reporters", "core", "cli"],
+  "npmClient": "yarn",
+  "useWorkspaces": true,
+  "version": "independent"
+}
