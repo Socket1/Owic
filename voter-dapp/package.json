@@ -1,0 +1,52 @@
+{
+  "name": "@umaprotocol/voter-dapp",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.3.1",
+    "@material-ui/icons": "^3.0.2",
+    "@material-ui/styles": "^4.3.0",
+    "@umaprotocol/react-plugin": "^1.5.5",
+    "@umaprotocol/store": "^1.5.6",
+    "react": "^16.8.6",
+    "react-cookie": "^4.0.3",
+    "react-dom": "^16.8.6",
+    "react-scripts": "3.0.1",
+    "bignumber.js": "^8.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "description": "UMA voting web interface",
+  "main": "src/index.js",
+  "homepage": "https://umaproject.org",
+  "license": "AGPL-3.0-or-later",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UMAprotocol/protocol.git"
+  },
+  "bugs": {
+    "url": "https://github.com/UMAprotocol/protocol/issues"
+  }
+}
