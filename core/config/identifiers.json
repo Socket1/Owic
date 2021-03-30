@@ -1,0 +1,21 @@
+{
+  "KES": {
+    "dappConfig": {
+      "comment": "expiries: 6/1/2020 10am ET; 2% supported move",
+      "expiries": [1591020000],
+      "supportedMove": "0.02"
+    },
+    "uploaderConfig": {
+      "publishInterval": "0",
+      "minDelay": "0",
+      "numerator": {
+        "dataSource": "Constant",
+        "assetName": "1"
+      },
+      "denominator": {
+        "dataSource": "Constant",
+        "assetName": "102"
+      }
+    }
+  }
+}
