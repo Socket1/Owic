@@ -1,0 +1,253 @@
+version: 2
+jobs:
+  checkout_and_install:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v8-dependency-cache-{{ checksum "package.json" }}
+            - v8-dependency-cache-
+      - run:
+          name: Install Prereqs
+          command: sudo apt-get update && sudo apt-get install -y libudev-dev libusb-1.0-0-dev
+      - run:
+          name: Install Dependencies
+          command: npm install --quiet
+      - save_cache:
+          key: v8-dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - save_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  build:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Compile contracts
+          command: ./ci/build.sh
+      - save_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  lint:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Lint
+          command: ./ci/lint.sh
+  docs:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Install Pandoc
+          command: wget https://github.com/jgm/pandoc/releases/download/2.7.3/pandoc-2.7.3-linux.tar.gz
+      - run:
+          name: Untar Pandoc
+          command: sudo tar xvzf pandoc-2.7.3-linux.tar.gz --strip-components 1 -C /usr/local
+      - run:
+          name: Generate Docs
+          command: ./scripts/build_docs_site.sh
+      - store_artifacts:
+          path: build/site
+  slither:
+    docker:
+      - image: trailofbits/eth-security-toolbox
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v7-sec-toolbox-deps-{{ checksum "package.json" }}
+            - v7-sec-toolbox-deps-
+      - run:
+          name: Install node and NPM
+          command: ./ci/install_node_npm.sh
+      - run:
+          name: Change user
+          command: sudo su ethsec
+      - run:
+          name: Reclaim ownership
+          command: sudo chown -R $(whoami) ~/.npm ~/.config
+      - run:
+          name: Install Prereqs
+          command: sudo apt-get update && sudo apt-get install -y libudev-dev libusb-1.0-0-dev python-dev
+      - run:
+          name: Install Dependencies
+          command: npm install --quiet
+      - save_cache:
+          key: v7-sec-toolbox-deps-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Slither
+          command: ./ci/run_slither.sh
+  test:
+    docker:
+      - image: circleci/node:lts
+      - image: trufflesuite/ganache-cli
+        command: ganache-cli -i 1234 -l 9000000
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run tests
+          command: ./ci/run_truffle_tests.sh
+      - run: 
+          name: th-gas-reporter/codechecks
+          command: npx codechecks
+  coverage:
+    docker:
+      # Note: we made a compromise here to get solidity-coverage to work. We're just creating a new build inside the
+      # trufflesuite/ganache-cli for solidity-coverage. This is because there were issues (not 100% sure about the
+      # cause) with getting solidity-coverage's testrpc to run correctly in the remote image. However, it cannot run
+      # locally without the opened 8545 port that this image has. So the solution we chose was to just run coverage
+      # within that docker image. Caching doesn't seem to work cross-image, so we have to re-checkout the repo and
+      # reinstall deps. We could have also run all the above tests inside this new image. However, we want to ensure
+      # that there is no implicit dependence on the bundled deps or setup inside the trufflesuite/ganache-cli image,
+      # so we want to continue generic testing against the bare node image.
+      # TODO(mrice32): we could probably fix this if we just created our own image on top of the node image that opens
+      # port 8545.
+      - image: trufflesuite/ganache-cli
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - run:
+          name: Install System Packages
+          command: apk update && apk add make git python g++ curl ca-certificates openssl libusb-dev eudev-dev linux-headers && update-ca-certificates
+      - restore_cache:
+          keys:
+            - v3-coverage-dependency-cache-{{ checksum "package.json" }}
+            - v3-coverage-dependency-cache-
+      - run:
+          name: Install Dependencies
+          command: npm install --quiet
+      - save_cache:
+          key: v3-coverage-dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Run coverage
+          command: ./ci/coverage.sh ~/protocol/core
+      - store_artifacts:
+          path: core/coverage
+  dapp_test:
+    docker:
+      - image: circleci/node:lts
+      - image: trufflesuite/ganache-cli
+        command: ganache-cli -i 1234 -l 9000000 -p 9545 -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Deploy Contracts
+          working_directory: ~/protocol/core
+          command: $(npm bin)/truffle migrate --reset --network test
+      - restore_cache:
+          keys:
+            - v6-dapp-dep-cache-{{ checksum "voter-dapp/package.json" }}
+            - v6-dapp-dep-cache-
+      - run:
+          name: Install Voter dApp Dependencies
+          working_directory: ~/protocol/voter-dapp
+          command: npm install
+      - save_cache:
+          key: v6-dapp-dep-cache-{{ checksum "voter-dapp/package.json" }}
+          paths:
+            - voter-dapp/node_modules
+      - save_cache:
+          key: dapp-env-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+      - run:
+          name: Test Voter DApp
+          working_directory: ~/protocol
+          command: ./ci/run_dapp_tests.sh
+  dapp_build:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: dapp-env-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Apply Deployment Registry
+          working_directory: ~/protocol/core
+          command: $(npm bin)/apply-registry
+      - run:
+          name: Build Voter dApp
+          working_directory: ~/protocol/voter-dapp
+          command: CI=false npm run build
+      - store_artifacts:
+          path: ~/protocol/voter-dapp/build
+          destination: voter-dapp-build
+  deploy_to_staging:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: dapp-env-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Install Pandoc
+          command: wget https://github.com/jgm/pandoc/releases/download/2.7.3/pandoc-2.7.3-linux.tar.gz
+      - run:
+          name: Untar Pandoc
+          command: sudo tar xvzf pandoc-2.7.3-linux.tar.gz --strip-components 1 -C /usr/local
+      - run:
+          name: Deploy Dapp
+          command: ./ci/deploy_to_staging.sh
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - checkout_and_install
+      - coverage:
+          context: api_keys
+      - slither
+      - build:
+          requires:
+            - checkout_and_install
+      - lint:
+          requires:
+            - checkout_and_install
+      - test:
+          context: api_keys
+          requires:
+            - build
+      - docs:
+          requires:
+            - checkout_and_install
+      - dapp_test:
+          requires:
+            - build
+      - dapp_build:
+          requires:
+            - dapp_test
+      - deploy_to_staging:
+          context: gcloud
+          requires:
+            - dapp_test
+            - test
+          filters:
+            branches:
+              only: master
