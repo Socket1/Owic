@@ -1,0 +1,74 @@
+[
+  {
+    "contractName": "Migrations",
+    "address": "0x28a5dA04a94F0501A6F77dF8f8A9529d27b92744"
+  },
+  {
+    "contractName": "Finder",
+    "address": "0x40f941E48A552bF496B154Af6bf55725f18D77c3"
+  },
+  {
+    "contractName": "VotingToken",
+    "address": "0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828"
+  },
+  {
+    "contractName": "IdentifierWhitelist",
+    "address": "0xcF649d9Da4D1362C4DAEa67573430Bd6f945e570"
+  },
+  {
+    "contractName": "Voting",
+    "address": "0x8B1631ab830d11531aE83725fDa4D86012eCCd77"
+  },
+  {
+    "contractName": "Registry",
+    "address": "0x3e532e6222afe9Bcf02DCB87216802c75D5113aE"
+  },
+  {
+    "contractName": "FinancialContractsAdmin",
+    "address": "0x4E6CCB1dA3C7844887F9A5aF4e8450d9fd90317A"
+  },
+  {
+    "contractName": "Store",
+    "address": "0x54f44eA3D2e7aA0ac089c4d8F7C93C27844057BF"
+  },
+  {
+    "contractName": "Governor",
+    "address": "0x592349F7DeDB2b75f9d4F194d4b7C16D82E507Dc"
+  },
+  {
+    "contractName": "DesignatedVotingFactory",
+    "address": "0xDE7c02aD2b925587Bd16724810f994a2948c4a38"
+  },
+  {
+    "contractName": "WETH9",
+    "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  },
+  {
+    "contractName": "TokenFactory",
+    "address": "0x7c96d6235CfaaCcAc5d80fCe74E6032B25dd1F03"
+  },
+  {
+    "contractName": "AddressWhitelist",
+    "address": "0xdBF90434dF0B98219f87d112F37d74B1D90758c7"
+  },
+  {
+    "contractName": "ExpiringMultiPartyLib",
+    "address": "0xa10648Da824330d7C7670E26a234bEf442E77f20"
+  },
+  {
+    "contractName": "ExpiringMultiPartyCreator",
+    "address": "0xddfC7E3B4531158acf4C7a5d2c3cB0eE81d018A5"
+  },
+  {
+    "contractName": "OptimisticOracle",
+    "address": "0x287a1bA52e030459F163f48b2Ae468a085003A07"
+  },
+  {
+    "contractName": "PerpetualLib",
+    "address": "0x026ed73A36b37B871Be7bfd25D1C62B9bfB358b5"
+  },
+  {
+    "contractName": "PerpetualCreator",
+    "address": "0xE9f67235C1B0EE401e5F5e119fB9DFc9753F10F9"
+  }
+]
