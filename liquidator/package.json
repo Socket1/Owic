@@ -1,0 +1,34 @@
+{
+  "name": "@umaprotocol/liquidator",
+  "version": "1.0.0",
+  "description": "UMA Liquidator",
+  "private": true,
+  "dependencies": {
+    "@umaprotocol/common": "^1.0.0",
+    "@umaprotocol/financial-templates-lib": "^1.0.0",
+    "dotenv": "^6.2.0",
+    "sinon": "^9.0.2",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.5.0",
+    "eslint-plugin-mocha": "^6.3.0",
+    "eslint-plugin-prettier": "^3.1.4"
+  },
+  "homepage": "https://umaproject.org",
+  "license": "AGPL-3.0-or-later",
+  "main": "index.js",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UMAprotocol/protocol.git"
+  },
+  "scripts": {
+    "test": "echo \"No tests currently configured\""
+  },
+  "bugs": {
+    "url": "https://github.com/UMAprotocol/protocol/issues"
+  }
+}

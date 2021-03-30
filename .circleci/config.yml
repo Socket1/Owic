@@ -1,0 +1,220 @@
+version: 2
+jobs:
+  checkout_and_install:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v11-dependency-cache-{{ checksum "package.json" }}
+            - v11-dependency-cache-
+      - run:
+          name: Install Prereqs
+          command: sudo apt-get update && sudo apt-get install -y libudev-dev libusb-1.0-0-dev yarn
+      - run:
+          name: Install Dependencies
+          command: npx lerna bootstrap
+      - save_cache:
+          key: v11-dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - save_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  build:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Compile contracts
+          command: ./ci/build.sh
+      - save_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  lint:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Lint
+          command: ./ci/lint.sh
+  docs:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Install Pandoc
+          command: wget https://github.com/jgm/pandoc/releases/download/2.7.3/pandoc-2.7.3-linux.tar.gz
+      - run:
+          name: Untar Pandoc
+          command: sudo tar xvzf pandoc-2.7.3-linux.tar.gz --strip-components 1 -C /usr/local
+      - run:
+          name: Generate Docs
+          command: ./scripts/build_docs_site.sh
+      - store_artifacts:
+          path: build/site
+  slither:
+    docker:
+      - image: trailofbits/eth-security-toolbox
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v7-sec-toolbox-deps-{{ checksum "package.json" }}
+            - v7-sec-toolbox-deps-
+      - run:
+          name: Install node and NPM
+          command: ./ci/install_node_npm.sh
+      - run:
+          name: Change user
+          command: sudo su ethsec
+      - run:
+          name: Reclaim ownership
+          command: sudo chown -R $(whoami) ~/.npm ~/.config
+      - run:
+          name: Install Prereqs
+          command: sudo apt-get update && sudo apt-get install -y libudev-dev libusb-1.0-0-dev python-dev
+      - run:
+          name: Install Dependencies
+          command: sudo npm install -g yarn && npx lerna bootstrap
+      - save_cache:
+          key: v7-sec-toolbox-deps-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Slither
+          command: ./ci/run_slither.sh
+  test:
+    docker:
+      - image: circleci/node:lts
+      - image: trufflesuite/ganache-cli
+        command: ganache-cli -i 1234 -l 9000000
+      - image: trufflesuite/ganache-cli
+        command: ganache-cli -l 9000000 -f https://mainnet.infura.io/v3/84842078b09946638c03157f83405213 -p 1235
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run tests
+          command: ./ci/run_truffle_tests.sh
+  coverage:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run coverage
+          command: ./ci/coverage.sh ~/protocol/core
+      - store_artifacts:
+          path: core/coverage
+  dapp_test:
+    docker:
+      - image: circleci/node:lts
+      - image: trufflesuite/ganache-cli
+        command: ganache-cli -i 1234 -l 9000000 -p 9545 -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Deploy Contracts
+          working_directory: ~/protocol/core
+          command: yarn run truffle migrate --reset --network test
+      - save_cache:
+          key: dapp-env-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+      - run:
+          name: Test Voter DApp
+          working_directory: ~/protocol
+          command: ./ci/run_dapp_tests.sh
+  dapp_build:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: dapp-env-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Apply Deployment Registry
+          working_directory: ~/protocol/core
+          command: yarn run apply-registry
+      - run:
+          name: Build Voter dApp
+          working_directory: ~/protocol/voter-dapp
+          command: CI=false yarn run build
+      - store_artifacts:
+          path: ~/protocol/voter-dapp/build
+          destination: voter-dapp-build
+  deploy_to_staging:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: dapp-env-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Install Pandoc
+          command: wget https://github.com/jgm/pandoc/releases/download/2.7.3/pandoc-2.7.3-linux.tar.gz
+      - run:
+          name: Untar Pandoc
+          command: sudo tar xvzf pandoc-2.7.3-linux.tar.gz --strip-components 1 -C /usr/local
+      - run:
+          name: Deploy Dapp
+          command: ./ci/deploy_to_staging.sh
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - checkout_and_install
+      - coverage:
+          context: api_keys
+          requires:
+            - checkout_and_install
+      - slither
+      - build:
+          requires:
+            - checkout_and_install
+      - lint:
+          requires:
+            - checkout_and_install
+      - test:
+          context: api_keys
+          requires:
+            - build
+      - docs:
+          requires:
+            - checkout_and_install
+      - dapp_test:
+          requires:
+            - build
+      - dapp_build:
+          requires:
+            - dapp_test
+      - deploy_to_staging:
+          context: gcloud
+          requires:
+            - dapp_test
+            - test
+          filters:
+            branches:
+              only: master
