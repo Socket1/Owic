@@ -1,0 +1,78 @@
+[
+  {
+    "contractName": "Migrations",
+    "address": "0x50039fAEfebef707cFD94D6d462fE6D10B39207a"
+  },
+  {
+    "contractName": "Finder",
+    "address": "0x9e416a429De8773e05563a92de4eD589aB5E5f1E"
+  },
+  {
+    "contractName": "VotingToken",
+    "address": "0x00526C1ede46255b752D280620318ab50B24c20e"
+  },
+  {
+    "contractName": "IdentifierWhitelist",
+    "address": "0x26f65d7Da395F01A3e9C21595D1A2C0e173d82A4"
+  },
+  {
+    "contractName": "Voting",
+    "address": "0x5545092553Cf5Bf786e87a87192E902D50D8f022"
+  },
+  {
+    "contractName": "Registry",
+    "address": "0x35E63eA3eb0fb7A3bc543C71FB66412e1F6B0E04"
+  },
+  {
+    "contractName": "FinancialContractsAdmin",
+    "address": "0xD8c6dD978a3768F7DDfE3A9aAD2c3Fd75Fa9B6Fd"
+  },
+  {
+    "contractName": "Store",
+    "address": "0xa4199d73ae206d49c966cF16c58436851f87d47F"
+  },
+  {
+    "contractName": "Governor",
+    "address": "0x09AFD24Acc170c16f4fF64BDf2A4818C515440e8"
+  },
+  {
+    "contractName": "DesignatedVotingFactory",
+    "address": "0xad7c5516b25661e0A204646b08024cD82ffe6C48"
+  },
+  {
+    "contractName": "ManualPriceFeed",
+    "address": "0xC660C7e1b35998Fdf895404746d3bD5D8ed5A6C1"
+  },
+  {
+    "contractName": "TokenizedDerivativeUtils",
+    "address": "0x9328Ce3B1FBCD0FCca9Dc9F1eB6a0a0Ed2aF0bDF"
+  },
+  {
+    "contractName": "AddressWhitelist",
+    "address": "0xC3956eb1FC4Da1fD2400cC4682a5a62a1F31806D"
+  },
+  {
+    "contractName": "AddressWhitelist",
+    "address": "0x3BED21dAe767e4Df894B31b14aD32369cE4bad8b"
+  },
+  {
+    "contractName": "TokenizedDerivativeCreator",
+    "address": "0xF962E0e485A5B9f8aDa9a438cEecc35c0020B6e7"
+  },
+  {
+    "contractName": "TestnetERC20",
+    "address": "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa"
+  },
+  {
+    "contractName": "LeveragedReturnCalculator",
+    "address": "0xa5eA165AfAc780807DE19aefa2B8a21079B8A627"
+  },
+  {
+    "contractName": "LeveragedReturnCalculator",
+    "address": "0xAcDE84590A2ba1aCfEbB220997Eb41B7A01f271f"
+  },
+  {
+    "contractName": "WETH9",
+    "address": "0xc778417E063141139Fce010982780140Aa0cD5Ab"
+  }
+]
