@@ -1,0 +1,165 @@
+require("dotenv").config();
+const { toWei } = web3.utils;
+
+// Helpers.
+const { delay } = require("../financial-templates-lib/helpers/delay");
+const { Logger } = require("../financial-templates-lib/logger/Logger");
+const { createPriceFeed } = require("../financial-templates-lib/price-feed/CreatePriceFeed");
+const { Networker } = require("../financial-templates-lib/price-feed/Networker");
+
+// Clients to retrieve on-chain data.
+const { ExpiringMultiPartyClient } = require("../financial-templates-lib/clients/ExpiringMultiPartyClient");
+const { ExpiringMultiPartyEventClient } = require("../financial-templates-lib/clients/ExpiringMultiPartyEventClient");
+const { TokenBalanceClient } = require("../financial-templates-lib/clients/TokenBalanceClient");
+
+// Monitor modules to report on client state changes.
+const { ContractMonitor } = require("./ContractMonitor");
+const { BalanceMonitor } = require("./BalanceMonitor");
+const { CRMonitor } = require("./CRMonitor");
+
+// Truffle contracts
+const ExpiringMultiParty = artifacts.require("ExpiringMultiParty");
+const ExpandedERC20 = artifacts.require("ExpandedERC20");
+
+// TODO: Figure out a good way to run this script, maybe with a wrapper shell script.
+// Currently, you can run it with `truffle exec ../monitor/index.js --price=<price>` *from the core  directory*.
+
+/**
+ * @notice Continuously attempts to monitor contract positions listening for newly emmited events.
+ * @param {Number} price Price used to inform the collateralization ratio of positions.
+ * @param {String} address Contract address of the EMP.
+ * @return None or throws an Error.
+ */
+async function run(price, address, shouldPoll, botMonitorObject, walletMonitorObject, pollingDelay, priceFeedConfig) {
+  Logger.info({
+    at: "Monitor#index",
+    message: "Monitor started 🕵️‍♂️",
+    empAddress: address,
+    currentPrice: price,
+    pollingDelay: pollingDelay,
+    priceFeedConfig
+  });
+
+  // Setup web3 accounts an contract instance
+  const accounts = await web3.eth.getAccounts();
+  const emp = await ExpiringMultiParty.at(address);
+
+  // Setup price feed.
+  // TODO: consider making getTime async and using contract time.
+  const getTime = () => Math.round(new Date().getTime() / 1000);
+  const priceFeed = await createPriceFeed(web3, Logger, new Networker(Logger), getTime, priceFeedConfig);
+
+  if (!priceFeed) {
+    throw "Invalid price feed config";
+  }
+
+  // 1. Contract state monitor
+  const empEventClient = new ExpiringMultiPartyEventClient(Logger, ExpiringMultiParty.abi, web3, emp.address, 10);
+  const contractMonitor = new ContractMonitor(Logger, empEventClient, [accounts[0]], [accounts[0]], priceFeed);
+
+  // 2. Balance monitor
+  const collateralTokenAddress = await emp.collateralCurrency();
+  const syntheticTokenAddress = await emp.tokenCurrency();
+
+  const tokenBalanceClient = new TokenBalanceClient(
+    Logger,
+    ExpandedERC20.abi,
+    web3,
+    collateralTokenAddress,
+    syntheticTokenAddress,
+    10
+  );
+
+  const balanceMonitor = new BalanceMonitor(Logger, tokenBalanceClient, botMonitorObject);
+
+  // 3. Collateralization Ratio monitor.
+  const empClient = new ExpiringMultiPartyClient(Logger, ExpiringMultiParty.abi, web3, emp.address, 10);
+
+  const crMonitor = new CRMonitor(Logger, empClient, walletMonitorObject, priceFeed);
+
+  while (true) {
+    try {
+      // 1.  Contract monitor
+      // 1.a Update dependencies.
+      await empEventClient.update();
+      await priceFeed.update();
+      // 1.b Check For new liquidation events
+      await contractMonitor.checkForNewLiquidations();
+      // 1.c Check for new disputes
+      await contractMonitor.checkForNewDisputeEvents();
+      // 1.d Check for new disputeSettlements
+      await contractMonitor.checkForNewDisputeSettlementEvents();
+
+      // 2.  Wallet Balance monitor
+      // 2.a Update the client
+      await tokenBalanceClient.update();
+      // 2.b Check for monitored bot balance changes
+      await balanceMonitor.checkBotBalances();
+
+      // 3.  Position Collateralization Ratio monitor.
+      // 3.a Update the client
+      await empClient.update();
+      // 3.b Check for positions below their CR
+      await crMonitor.checkWalletCrRatio();
+    } catch (error) {
+      console.log("ERROR", error);
+      Logger.error({
+        at: "Monitors#index",
+        message: "Monitor polling error🚨",
+        error: error.toString()
+      });
+    }
+    await delay(Number(pollingDelay));
+
+    if (!shouldPoll) {
+      break;
+    }
+  }
+}
+
+const Poll = async function(callback) {
+  try {
+    if (!process.env.EMP_ADDRESS) {
+      throw new Error(
+        "Bad environment variables! Specify an `EMP_ADDRESS` for the location of the expiring Multi Party."
+      );
+    }
+    // TODO: Remove this price flag once we have built the pricefeed module.
+    if (!process.env.PRICE) {
+      throw new Error("Bad input arg! Specify a `price` as the pricefeed.");
+    }
+
+    if (!process.env.BOT_MONITOR_OBJECT || !process.env.WALLET_MONITOR_OBJECT) {
+      throw new Error("Bad input arg! Specify a bot monitor and wallet monitor object to track.");
+    }
+
+    const pollingDelay = process.env.POLLING_DELAY ? process.env.POLLING_DELAY : 10_000;
+
+    // Bot objects to monitor. For each bot specify a name, address and the thresholds to monitor.
+    const botMonitorObject = JSON.parse(process.env.BOT_MONITOR_OBJECT);
+
+    // Wallet objects to monitor.
+    const walletMonitorObject = JSON.parse(process.env.WALLET_MONITOR_OBJECT);
+
+    // Read price feed configuration from an environment variable.
+    const priceFeedConfig = JSON.parse(process.env.PRICE_FEED_CONFIG);
+
+    await run(
+      process.env.PRICE,
+      process.env.EMP_ADDRESS,
+      true,
+      botMonitorObject,
+      walletMonitorObject,
+      pollingDelay,
+      priceFeedConfig
+    );
+  } catch (err) {
+    callback(err);
+  }
+  callback();
+};
+
+// Attach this function to the exported function
+// in order to allow the script to be executed through both truffle and a test runner.
+Poll.run = run;
+module.exports = Poll;
